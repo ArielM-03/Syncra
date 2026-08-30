@@ -6,6 +6,7 @@ import com.syncra.syncra.model.Workspace;
 import com.syncra.syncra.repository.TaskRepository;
 import com.syncra.syncra.repository.UserRepository;
 import com.syncra.syncra.repository.WorkspaceRepository;
+import com.syncra.syncra.model.WorkspaceMember;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,12 +22,19 @@ public class TaskService {
     private final TaskRepository taskRepository;
     private final UserRepository userRepository;
     private final WorkspaceRepository workspaceRepository;
+    private final WorkspaceMemberService workspaceMemberService;
 
-    public Task createTask(Long workspaceId, Long createdByUserId, String title, String description, Long assignedToUserId) {
+    public Task createTask(Long workspaceId, Long createdByUserId,
+                            String title, String description, Long assignedToUserId) {
 
-        Workspace workspace = workspaceRepository.findById(workspaceId).orElseThrow(() -> new IllegalArgumentException("Workspace not found"));
+        workspaceMemberService.requireRole(workspaceId, createdByUserId,
+                WorkspaceMember.MemberRole.MEMBER);
 
-        User createdBy = userRepository.findById(createdByUserId).orElseThrow(() -> new IllegalArgumentException("User not found"));
+        Workspace workspace = workspaceRepository.findById(workspaceId)
+                .orElseThrow(() -> new IllegalArgumentException("Workspace not found."));
+
+        User createdBy = userRepository.findById(createdByUserId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found."));
 
         Task task = new Task();
         task.setWorkspace(workspace);
@@ -36,7 +44,8 @@ public class TaskService {
         task.setStatus(Task.TaskStatus.TODO);
 
         if (assignedToUserId != null) {
-            User assignedTo = userRepository.findById(assignedToUserId).orElseThrow(() -> new IllegalArgumentException("Assigned user not found."));
+            User assignedTo = userRepository.findById(assignedToUserId)
+                    .orElseThrow(() -> new IllegalArgumentException("Assigned user not found."));
             task.setAssignedTo(assignedTo);
         }
 
@@ -65,6 +74,12 @@ public class TaskService {
     public Task updateTaskStatus(Long taskId, Task.TaskStatus newStatus) {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new IllegalArgumentException("Task not found."));
+
+        workspaceMemberService.requireRole(
+                task.getWorkspace().getWorkspaceId(),
+                task.getCreatedBy().getUserId(),
+                WorkspaceMember.MemberRole.MEMBER);
+
         task.setStatus(newStatus);
         return taskRepository.save(task);
     }
