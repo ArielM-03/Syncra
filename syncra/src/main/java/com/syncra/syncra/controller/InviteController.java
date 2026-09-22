@@ -1,6 +1,6 @@
 package com.syncra.syncra.controller;
 
-import com.syncra.syncra.model.Invite;
+import com.syncra.syncra.dto.InviteDTO;
 import com.syncra.syncra.model.WorkspaceMember;
 import com.syncra.syncra.service.InviteService;
 import lombok.RequiredArgsConstructor;
@@ -17,7 +17,7 @@ public class InviteController {
     private final InviteService inviteService;
 
     @PostMapping
-    public ResponseEntity<Invite> createInvite(
+    public ResponseEntity<InviteDTO> createInvite(
             @PathVariable Long workspaceId,
             @RequestBody Map<String, Object> request) {
         Long createdByUserId = Long.valueOf(request.get("createdByUserId").toString());
@@ -25,15 +25,17 @@ public class InviteController {
         WorkspaceMember.MemberRole role = WorkspaceMember.MemberRole.valueOf(
                 request.get("role").toString());
         return ResponseEntity.ok(
-                inviteService.createInvite(workspaceId, createdByUserId, email, role));
+                InviteDTO.from(
+                        inviteService.createInvite(workspaceId, createdByUserId, email, role)));
     }
 
     @PostMapping("/accept")
-    public ResponseEntity<Invite> acceptInvite(
+    public ResponseEntity<InviteDTO> acceptInvite(
             @PathVariable Long workspaceId,
             @RequestBody Map<String, Object> request) {
         String token = (String) request.get("token");
         Long userId = Long.valueOf(request.get("userId").toString());
-        return ResponseEntity.ok(inviteService.acceptInvite(token, userId));
+        return ResponseEntity.ok(
+                InviteDTO.from(inviteService.acceptInvite(token, userId)));
     }
 }
