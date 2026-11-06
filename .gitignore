@@ -1,0 +1,14 @@
+# Dependencies
+node_modules/
+
+# IDE and tool metadata
+.idea/
+.postman/
+postman/
+
+# Stray root-level npm files, not the frontend ones
+/package.json
+/package-lock.json
+
+# Secrets
+.env
